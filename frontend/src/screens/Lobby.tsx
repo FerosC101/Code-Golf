@@ -18,6 +18,9 @@ export function Lobby({ state, meId }: { state: RoomState; meId?: number }) {
           <div className="mt-1 font-mono text-xs text-fog">{state.room.name}</div>
           <p className="mt-8 font-display text-xl text-green">Waiting for the host...</p>
           <TerminalLog lines={BOOT} className="mt-4" />
+          <a href="/practice" target="_blank" rel="noreferrer" className="mt-6 inline-block font-mono text-xs text-fog hover:text-green">
+            <span className="text-green">&gt;</span> warm up on the practice range ↗
+          </a>
           <Mascot variant="head" idle className="mt-8 hidden w-24 md:block" />
         </div>
 

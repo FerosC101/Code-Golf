@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import db
+from app.api.practice import router as practice_router
 from app.api.rooms import router as rooms_router
 from app.config import Settings, get_settings
 from app.executor_client import Executor, HttpExecutor
@@ -51,6 +52,7 @@ def create_app(settings: Settings | None = None, executor: Executor | None = Non
         return {"ok": True}
 
     app.include_router(rooms_router)
+    app.include_router(practice_router)
     app.include_router(ws_router)
     return app
 

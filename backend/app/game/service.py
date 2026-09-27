@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.game.problems import SAMPLE_PACK
+from app.game.problems import LIBRARY, STARTER_SLUGS
 from app.game.scoring import DEFAULT_SCORING, competition_rank, points_for_rank
 from app.models import GameRoom, Player, Round, RoundScore, Submission, TestCase, as_utc
 from app.schemas import RoundIn, TestCaseIn
@@ -163,9 +163,15 @@ async def add_round(s: AsyncSession, room: GameRoom, data: RoundIn) -> Round:
     return r
 
 
-async def add_sample_pack(s: AsyncSession, room: GameRoom) -> None:
+async def add_library_rounds(s: AsyncSession, room: GameRoom, slugs: list[str]) -> int:
+    if room.status == "finished":
+        raise GameError("This game is already over", 409)
+    unknown = [slug for slug in slugs if slug not in LIBRARY]
+    if unknown:
+        raise GameError(f"Unknown problem: {unknown[0]}", 404)
     number = len(room.rounds)
-    for problem in SAMPLE_PACK:
+    for slug in slugs:
+        problem = LIBRARY[slug]
         number += 1
         data = RoundIn(
             title=problem["title"],
@@ -177,6 +183,11 @@ async def add_sample_pack(s: AsyncSession, room: GameRoom) -> None:
         _apply_round(r, data)
         s.add(r)
     await s.commit()
+    return len(slugs)
+
+
+async def add_sample_pack(s: AsyncSession, room: GameRoom) -> None:
+    await add_library_rounds(s, room, STARTER_SLUGS)
 
 
 async def update_round(s: AsyncSession, room: GameRoom, round_id: int, data: RoundIn) -> None:

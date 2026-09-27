@@ -1,5 +1,5 @@
 import { apiUrl } from "./backend";
-import type { JudgeResult } from "./types";
+import type { JudgeResult, LibraryProblem, PracticeProblem } from "./types";
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -55,6 +55,8 @@ export const api = {
     request(`/api/rooms/${code}`, { method: "PATCH", host, body: json(data) }),
   addRound: (code: string, host: string, data: RoundPayload) =>
     request<{ id: number }>(`/api/rooms/${code}/rounds`, { method: "POST", host, body: json(data) }),
+  addLibraryRounds: (code: string, host: string, slugs: string[]) =>
+    request<{ added: number }>(`/api/rooms/${code}/rounds/library`, { method: "POST", host, body: json({ slugs }) }),
   addSamplePack: (code: string, host: string) =>
     request(`/api/rooms/${code}/rounds/sample-pack`, { method: "POST", host }),
   updateRound: (code: string, host: string, id: number, data: RoundPayload) =>
@@ -71,6 +73,12 @@ export const api = {
   start: (code: string, host: string) => request(`/api/rooms/${code}/start`, { method: "POST", host }),
   end: (code: string, host: string) => request(`/api/rooms/${code}/end`, { method: "POST", host }),
   finish: (code: string, host: string) => request(`/api/rooms/${code}/finish`, { method: "POST", host }),
+
+  // practice + problem library
+  library: () => request<{ problems: LibraryProblem[] }>("/api/practice").then((r) => r.problems),
+  practiceProblem: (slug: string) => request<PracticeProblem>(`/api/practice/${encodeURIComponent(slug)}`),
+  practice: (slug: string, kind: "run" | "submit", source: string) =>
+    request<JudgeResult>(`/api/practice/${encodeURIComponent(slug)}/${kind}`, { method: "POST", body: json({ code: source }) }),
 
   // player
   run: (code: string, player: string, source: string) =>

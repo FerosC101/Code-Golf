@@ -43,3 +43,7 @@ class RoundIn(BaseModel):
 
 class CodeIn(BaseModel):
     code: str = Field(max_length=20_000)
+
+
+class LibraryPickIn(BaseModel):
+    slugs: list[str] = Field(min_length=1, max_length=50)

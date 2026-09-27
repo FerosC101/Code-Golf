@@ -48,6 +48,10 @@ def main() -> None:
 
     results = []
     for index, stdin_text in enumerate(job["inputs"]):
+        # Test inputs are typed like lines; make sure the last one ends like one
+        # so input() on an "empty" test reads "" instead of hitting EOF.
+        if not stdin_text.endswith("\n"):
+            stdin_text += "\n"
         out_path = os.path.join(workdir, f"out{index}")
         err_path = os.path.join(workdir, f"err{index}")
         with open(out_path, "wb") as out, open(err_path, "wb") as err:

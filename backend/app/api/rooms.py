@@ -7,7 +7,7 @@ from app.db import get_session
 from app.game import service
 from app.game.runtime import GameRuntime
 from app.game.service import GameError, load_room, require_host
-from app.schemas import CodeIn, CreateRoomIn, JoinIn, RoundIn, UpdateRoomIn
+from app.schemas import CodeIn, CreateRoomIn, JoinIn, LibraryPickIn, RoundIn, UpdateRoomIn
 
 router = APIRouter(prefix="/api/rooms", tags=["rooms"])
 
@@ -89,6 +89,14 @@ async def add_sample_pack(code: str, s: Session, rt: Runtime, token: HostToken =
     await service.add_sample_pack(s, room)
     await rt.hub.broadcast_state(room.room_code)
     return {"ok": True}
+
+
+@router.post("/{code}/rounds/library", status_code=201)
+async def add_library_rounds(code: str, body: LibraryPickIn, s: Session, rt: Runtime, token: HostToken = None):
+    room = await _host_room(s, code, token)
+    added = await service.add_library_rounds(s, room, body.slugs)
+    await rt.hub.broadcast_state(room.room_code)
+    return {"added": added}
 
 
 @router.put("/{code}/rounds/{round_id}")

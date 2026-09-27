@@ -101,4 +101,24 @@ export type JudgeResult = {
   submitted?: boolean;
   previous_best?: number | null;
   best?: number | null;
+  /** Practice only. */
+  par?: number;
+  par_solution?: string;
+};
+
+export type Difficulty = "easy" | "medium" | "hard";
+
+export type LibraryProblem = {
+  slug: string;
+  title: string;
+  difficulty: Difficulty;
+  description: string;
+  original_chars: number;
+  par: number;
+};
+
+export type PracticeProblem = LibraryProblem & {
+  original_code: string;
+  public_tests: PublicTest[];
+  hidden_count: number;
 };

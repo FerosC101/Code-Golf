@@ -84,10 +84,19 @@ cd frontend && npm run typecheck
 
 `/watch/<code>` is a read-only spectator/projector view that works on phones.
 
+### Problem library & practice
+
+24 built-in problems (11 easy, 8 medium, 5 hard) live in `backend/app/game/problems.py`, each with a verbose original, public + hidden tests, and a **par**: the length of a reference golfed solution.
+
+- **Hosts** add them as rounds from the dashboard's **Library** picker (pick any, or "+ all hard"), write custom rounds, or load the 5-problem starter pack.
+- **Practice range** (`/practice`): solo, no room, no clock. Pick a hole, shrink it, submit against the same hidden tests, and get scored against par (`-3 UNDER PAR`, `PAR`, `+5 OVER PAR`). Beating a hole reveals the par solution. Personal bests are stored in the browser. Practice judging is capped (`CG_PRACTICE_CONCURRENCY`, default 2) so it can't slow down a live round.
+
+Adding a problem: append to `_RAW` in `problems.py`. `tests/test_practice.py` checks the shape; run the original and par solution through the executor to check the tests themselves.
+
 ### Rules
 
 - **Every character counts**: spaces, tabs and newlines included. CRLF is normalised to LF. Counted in Unicode code points, identical on client and server.
-- **Output matching** ignores trailing whitespace on each line and trailing blank lines.
+- **Output matching** ignores trailing whitespace on each line and trailing blank lines. Test inputs are fed as lines (a trailing newline is added if missing).
 - **Ties share a rank** (standard competition ranking): 27, 27, 29 → 1st, 1st, 3rd. Submission speed is never a tiebreaker.
 - **Points** default to `10, 8, 6, 5, 4, 3, 2, 1`; the last value applies to every rank below it. Hosts can change it per room. Players with no passing submission get 0.
 - **Movement** arrows on the leaderboard compare against standings before the latest round.
@@ -97,10 +106,10 @@ cd frontend && npm run typecheck
 ```
 frontend/  React + TS + Vite + Tailwind v4 + Monaco
   src/brand/        pixel-art mascot, wordmark, icons, stickers, confetti (all SVG, no images)
-  src/components/   Button, Field, Panel, Timer, CharCounter, TerminalLog, CodeEditor
+  src/components/   Button, Field, Panel, Timer, CharCounter, TerminalLog, CodeEditor, Workbench (shared by rounds + practice)
   src/screens/      Lobby, Countdown, Results, Leaderboard, Final: shared by player + spectator
-  src/pages/        Landing, Join, Play, Watch, HostCreate, HostDashboard
-  src/host/         RoundEditor, ScoringEditor
+  src/pages/        Landing, Join, Play, Watch, HostCreate, HostDashboard, PracticeList, PracticeHole
+  src/host/         RoundEditor, ScoringEditor, LibraryPicker
   src/lib/          api client, useRoom (WebSocket + clock sync), types, session storage
   src/styles/       design tokens (@theme): colours, fonts, radii, motion
 
@@ -111,7 +120,9 @@ backend/   FastAPI + SQLAlchemy 2 (async) + PostgreSQL
   app/game/runtime.py   orchestration: per-room locks, round timers, judging, lock + drain
   app/game/snapshot.py  per-viewer state (host / player / spectator)
   app/realtime/         WebSocket endpoint + in-process fan-out hub
-  app/api/rooms.py      REST endpoints
+  app/api/rooms.py      REST endpoints for rooms
+  app/api/practice.py   problem library + solo practice
+  app/game/problems.py  the 24-problem library
 
 executor/  Isolated execution service (internal network only)
   app/sandbox.py        docker mode (one container per job) / process mode (dev)
@@ -160,7 +171,7 @@ No accounts. Creating a room returns a host token and joining returns a player t
 
 ## Configuration
 
-Backend (`CG_` prefix): `DATABASE_URL` (plain `postgresql://` URLs are accepted), `EXECUTOR_URL`, `EXECUTOR_TOKEN`, `CORS_ORIGINS` (comma-separated), `CORS_ORIGIN_REGEX`, `COUNTDOWN_SECONDS` (4), `SUBMIT_GRACE_SECONDS` (1), `TEST_TIME_LIMIT` (2), `MAX_CODE_CHARS` (10000), `MAX_PLAYERS_PER_ROOM` (64).
+Backend (`CG_` prefix): `DATABASE_URL` (plain `postgresql://` URLs are accepted), `EXECUTOR_URL`, `EXECUTOR_TOKEN`, `CORS_ORIGINS` (comma-separated), `CORS_ORIGIN_REGEX`, `COUNTDOWN_SECONDS` (4), `SUBMIT_GRACE_SECONDS` (1), `TEST_TIME_LIMIT` (2), `MAX_CODE_CHARS` (10000), `MAX_PLAYERS_PER_ROOM` (64), `PRACTICE_CONCURRENCY` (2), `DB_CONNECT_WAIT_SECONDS` (120).
 
 Executor (`EXEC_` prefix): `MODE` (`docker`|`process`), `TOKEN`, `SANDBOX_IMAGE`, `MAX_CONCURRENCY` (4), `MEMORY_MB` (128), `CPUS` (0.5), `PIDS_LIMIT` (32), `TMPFS_MB` (16).
 

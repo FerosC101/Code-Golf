@@ -13,6 +13,7 @@ from app import db
 from app.config import Settings
 from app.executor_client import Executor, TestOutcome, TestSpec
 from app.game import service
+from app.game.problems import LIBRARY
 from app.game.scoring import count_chars, normalize_code
 from app.game.service import GameError, active_round, find_player, load_room, require_host
 from app.models import GameRoom, Round, Submission, as_utc, utcnow
@@ -26,6 +27,45 @@ def _tail(text: str, limit: int) -> str:
     return text if len(text) <= limit else "…" + text[-limit:]
 
 
+def summarize(tests: list[TestSpec], outcomes: list[TestOutcome]) -> dict[str, Any]:
+    """Player-facing verdict: details for public tests, only counts for hidden ones."""
+    if len(outcomes) != len(tests):
+        raise GameError("The judge returned an unexpected result", 502)
+    public: list[dict[str, Any]] = []
+    hidden_total = hidden_passed = 0
+    for index, (spec, outcome) in enumerate(zip(tests, outcomes, strict=True)):
+        if spec.hidden:
+            hidden_total += 1
+            hidden_passed += outcome.status == "passed"
+        else:
+            # Public tests: show the player's own output to help debugging.
+            public.append(
+                {
+                    "index": index,
+                    "status": outcome.status,
+                    "stdout": _tail(outcome.stdout, 400),
+                    "error": _tail(outcome.error, 200),
+                }
+            )
+    return {
+        "passed": all(o.status == "passed" for o in outcomes),
+        "public": public,
+        "hidden_total": hidden_total,
+        "hidden_passed": hidden_passed,
+        "failed": sum(o.status != "passed" for o in outcomes),
+    }
+
+
+def clean_source(source: str, max_chars: int) -> tuple[str, int]:
+    source = normalize_code(source)
+    chars = count_chars(source)
+    if not source.strip():
+        raise GameError("Write some code first")
+    if chars > max_chars:
+        raise GameError("That's not golf, that's a novel")
+    return source, chars
+
+
 class GameRuntime:
     def __init__(self, settings: Settings, executor: Executor, hub: Hub):
         self.settings = settings
@@ -36,6 +76,9 @@ class GameRuntime:
         self._locked_rounds: set[int] = set()
         self._inflight: dict[int, set[asyncio.Task]] = defaultdict(set)
         self._busy_players: set[int] = set()
+        # Solo practice shares the executor with live games; cap it so a crowd
+        # of practisers can't slow down judging during a round.
+        self._practice_slots = asyncio.Semaphore(max(1, settings.practice_concurrency))
 
     # ── lifecycle ─────────────────────────────────────────────────────────
 
@@ -131,12 +174,7 @@ class GameRuntime:
     # ── player actions ────────────────────────────────────────────────────
 
     async def judge(self, code: str, player_token: str | None, source: str, *, submit: bool) -> dict[str, Any]:
-        source = normalize_code(source)
-        chars = count_chars(source)
-        if not source.strip():
-            raise GameError("Write some code first")
-        if chars > self.settings.max_code_chars:
-            raise GameError("That's not golf, that's a novel")
+        source, chars = clean_source(source, self.settings.max_code_chars)
 
         async with db.session() as s:
             room = await load_room(s, code)
@@ -184,34 +222,8 @@ class GameRuntime:
         self, source: str, chars: int, tests: list[TestSpec], round_id: int, player_id: int, submit: bool
     ) -> dict[str, Any]:
         outcomes: list[TestOutcome] = await self.executor.run(source, tests)
-        if len(outcomes) != len(tests):
-            raise GameError("The judge returned an unexpected result", 502)
-        passed = all(o.status == "passed" for o in outcomes)
-
-        public: list[dict[str, Any]] = []
-        hidden_total = hidden_passed = 0
-        for index, (spec, outcome) in enumerate(zip(tests, outcomes, strict=True)):
-            if spec.hidden:
-                hidden_total += 1
-                hidden_passed += outcome.status == "passed"
-            else:
-                # Public tests: show the player's own output to help debugging.
-                public.append(
-                    {
-                        "index": index,
-                        "status": outcome.status,
-                        "stdout": _tail(outcome.stdout, 400),
-                        "error": _tail(outcome.error, 200),
-                    }
-                )
-        result: dict[str, Any] = {
-            "chars": chars,
-            "passed": passed,
-            "public": public,
-            "hidden_total": hidden_total,
-            "hidden_passed": hidden_passed,
-            "failed": sum(o.status != "passed" for o in outcomes),
-        }
+        result: dict[str, Any] = {"chars": chars, **summarize(tests, outcomes)}
+        passed = result["passed"]
         if submit:
             async with db.session() as s:
                 previous_best = await s.scalar(
@@ -227,4 +239,26 @@ class GameRuntime:
             if passed:
                 best = chars if previous_best is None else min(previous_best, chars)
             result |= {"submitted": True, "previous_best": previous_best, "best": best}
+        return result
+
+    # ── solo practice (stateless: personal bests live in the browser) ──────
+
+    async def practice(self, slug: str, source: str, *, submit: bool) -> dict[str, Any]:
+        problem = LIBRARY.get(slug)
+        if problem is None:
+            raise GameError("Problem not found", 404)
+        source, chars = clean_source(source, self.settings.max_code_chars)
+        tests = [TestSpec(i, o, h) for i, o, h in problem["tests"] if submit or not h]
+        try:
+            await asyncio.wait_for(self._practice_slots.acquire(), timeout=15)
+        except TimeoutError:
+            raise GameError("Practice judge is busy. Try again in a few seconds.", 429) from None
+        try:
+            outcomes = await self.executor.run(source, tests)
+        finally:
+            self._practice_slots.release()
+        result: dict[str, Any] = {"chars": chars, **summarize(tests, outcomes), "par": problem["par"]}
+        if submit and result["passed"]:
+            # Earned it: show how par was reached.
+            result["par_solution"] = problem["par_solution"]
         return result

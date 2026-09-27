@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     max_code_chars: int = 10_000
     test_time_limit: float = 2.0
     max_players_per_room: int = 64
+    practice_concurrency: int = 2
 
 
     @field_validator("database_url")

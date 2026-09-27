@@ -89,6 +89,10 @@ export default function Join() {
             <Link to="/host" className="hover:text-green">
               Host a game
             </Link>
+            {" · "}
+            <Link to="/practice" className="hover:text-green">
+              Practice
+            </Link>
             {code.length >= 4 && (
               <>
                 {" · "}

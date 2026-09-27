@@ -53,3 +53,8 @@ def test_blocked_operations():
 def test_reading_and_exec_still_work():
     statuses, _ = run("exec('print(sum(map(int,input())))')", [{"input": "123", "expected_output": "6"}])
     assert statuses == ["passed"]
+
+
+def test_empty_input_is_an_empty_line_not_eof():
+    statuses, _ = run("print(len(input().split()))", [{"input": "", "expected_output": "0"}])
+    assert statuses == ["passed"]

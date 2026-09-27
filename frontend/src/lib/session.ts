@@ -28,6 +28,8 @@ export const session = {
   setPlayer: (code: string, p: PlayerSession | null) => write(`cg:player:${code.toUpperCase()}`, p),
   lastName: () => read<string>("cg:name") ?? "",
   setLastName: (name: string) => write("cg:name", name),
-  draft: (code: string, round: number) => read<string>(`cg:draft:${code.toUpperCase()}:${round}`),
-  setDraft: (code: string, round: number, src: string) => write(`cg:draft:${code.toUpperCase()}:${round}`, src),
+  loadDraft: (key: string) => read<string>(key),
+  saveDraft: (key: string, src: string) => write(key, src),
+  practiceBest: (slug: string) => read<number>(`cg:practice:best:${slug}`),
+  setPracticeBest: (slug: string, chars: number) => write(`cg:practice:best:${slug}`, chars),
 };

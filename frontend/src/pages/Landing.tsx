@@ -49,7 +49,13 @@ export default function Landing() {
               [ HOST A GAME ]
             </Link>
           </div>
-          <p className="mt-8 font-mono text-xs tracking-[0.2em] text-green/80">
+          <p className="mt-5 font-mono text-xs text-fog">
+            no game tonight?{" "}
+            <Link to="/practice" className="text-green underline-offset-4 hover:underline">
+              warm up on the practice range →
+            </Link>
+          </p>
+          <p className="mt-6 font-mono text-xs tracking-[0.2em] text-green/80">
             [ PYTHON <span className="text-steel">|</span> LESS CHARACTERS <span className="text-steel">|</span> MORE CHAOS ]
           </p>
         </section>

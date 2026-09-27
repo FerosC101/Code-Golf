@@ -4,6 +4,7 @@ import { Mascot } from "../brand/Mascot";
 import { Button } from "../components/Button";
 import { Panel } from "../components/Panel";
 import { Timer } from "../components/Timer";
+import { LibraryPicker } from "../host/LibraryPicker";
 import { RoundEditor } from "../host/RoundEditor";
 import { ScoringEditor } from "../host/ScoringEditor";
 import { api, type RoundPayload } from "../lib/api";
@@ -15,7 +16,7 @@ import { Leaderboard } from "../screens/Leaderboard";
 import { RoomBadge, TopBar } from "../screens/TopBar";
 import { Booting } from "./Play";
 
-type Editing = { mode: "new" } | { mode: "edit"; round: HostRound } | null;
+type Editing = { mode: "new" } | { mode: "edit"; round: HostRound } | { mode: "library" } | null;
 type Verify = Record<number, { busy?: boolean; text?: string; ok?: boolean }>;
 
 export default function HostDashboard() {
@@ -205,7 +206,18 @@ export default function HostDashboard() {
 
         {/* ── centre: rounds + submissions ────────────── */}
         <div className="flex min-w-0 flex-col gap-3">
-          {editing ? (
+          {editing?.mode === "library" ? (
+            <Panel title="Problem library" chrome>
+              <LibraryPicker
+                queued={new Set(host.rounds.map((r) => r.title))}
+                onAdd={async (slugs) => {
+                  await api.addLibraryRounds(room.code, token!, slugs);
+                  setEditing(null);
+                }}
+                onClose={() => setEditing(null)}
+              />
+            </Panel>
+          ) : editing ? (
             <Panel title={editing.mode === "new" ? "New round" : `Edit round ${editing.round.number}`} chrome>
               <RoundEditor round={editing.mode === "edit" ? editing.round : undefined} onSave={saveRound} onCancel={() => setEditing(null)} />
             </Panel>
@@ -220,8 +232,11 @@ export default function HostDashboard() {
                         Starter pack
                       </Button>
                     )}
+                    <Button size="sm" variant="secondary" onClick={() => setEditing({ mode: "library" })}>
+                      Library
+                    </Button>
                     <Button size="sm" onClick={() => setEditing({ mode: "new" })}>
-                      + Add round
+                      + Custom round
                     </Button>
                   </>
                 )
@@ -229,7 +244,7 @@ export default function HostDashboard() {
               bodyClassName="overflow-x-auto"
             >
               {host.rounds.length === 0 ? (
-                <p className="p-6 font-mono text-sm text-fog">&gt; no rounds yet. add a problem or load the starter pack.</p>
+                <p className="p-6 font-mono text-sm text-fog">&gt; no rounds yet. pick from the library, write your own, or load the starter pack.</p>
               ) : (
                 <table className="w-full min-w-[640px] font-mono text-[13px]">
                   <thead>
