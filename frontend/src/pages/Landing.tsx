@@ -148,6 +148,7 @@ const LEVELS: { level: Difficulty; blurb: string }[] = [
   { level: "easy", blurb: "one-liners waiting to happen" },
   { level: "medium", blurb: "loops worth unrolling" },
   { level: "hard", blurb: "full python crimes" },
+  { level: "nightmare", blurb: "confusing on purpose" },
 ];
 
 /** Every problem in the library, grouped by difficulty; each links into practice. */
@@ -177,16 +178,16 @@ function Course() {
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {LEVELS.map(({ level, blurb }) => {
             const holes = numbered.filter((p) => p.difficulty === level);
             return (
               <div key={level} className="rounded-md border border-slate bg-ink-2">
-                <div className="flex items-center justify-between border-b border-slate px-4 py-3">
+                <div className="flex items-center justify-between gap-3 border-b border-slate px-4 py-3">
                   <span className={`rounded-sm border px-2 py-0.5 font-mono text-[10px] tracking-[0.2em] uppercase ${DIFFICULTY_TONE[level]}`}>
                     {level}
                   </span>
-                  <span className="font-mono text-[11px] text-fog">
+                  <span className="text-right font-mono text-[11px] leading-4 text-fog">
                     {problems ? `${holes.length} holes · ` : ""}
                     {blurb}
                   </span>

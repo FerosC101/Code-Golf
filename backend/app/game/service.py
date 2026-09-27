@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.game.problems import LIBRARY, STARTER_SLUGS
+from app.game.problems import LIBRARY, PACKS
 from app.game.scoring import DEFAULT_SCORING, competition_rank, points_for_rank
 from app.models import GameRoom, Player, Round, RoundScore, Submission, TestCase, as_utc
 from app.schemas import RoundIn, TestCaseIn
@@ -177,6 +177,7 @@ async def add_library_rounds(s: AsyncSession, room: GameRoom, slugs: list[str]) 
             title=problem["title"],
             description=problem["description"],
             original_code=problem["original_code"],
+            duration_seconds=problem["duration_seconds"],
             tests=[TestCaseIn(input=i, expected_output=o, hidden=h) for i, o, h in problem["tests"]],
         )
         r = Round(room_id=room.id, round_number=number, status="pending")
@@ -186,8 +187,10 @@ async def add_library_rounds(s: AsyncSession, room: GameRoom, slugs: list[str]) 
     return len(slugs)
 
 
-async def add_sample_pack(s: AsyncSession, room: GameRoom) -> None:
-    await add_library_rounds(s, room, STARTER_SLUGS)
+async def add_pack(s: AsyncSession, room: GameRoom, name: str = "starter") -> int:
+    if name not in PACKS:
+        raise GameError(f"Unknown pack: {name}", 404)
+    return await add_library_rounds(s, room, PACKS[name])
 
 
 async def update_round(s: AsyncSession, room: GameRoom, round_id: int, data: RoundIn) -> None:

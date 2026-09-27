@@ -86,9 +86,18 @@ async def add_round(code: str, body: RoundIn, s: Session, rt: Runtime, token: Ho
 @router.post("/{code}/rounds/sample-pack", status_code=201)
 async def add_sample_pack(code: str, s: Session, rt: Runtime, token: HostToken = None):
     room = await _host_room(s, code, token)
-    await service.add_sample_pack(s, room)
+    await service.add_pack(s, room, "starter")
     await rt.hub.broadcast_state(room.room_code)
     return {"ok": True}
+
+
+@router.post("/{code}/rounds/pack/{pack}", status_code=201)
+async def add_pack(code: str, pack: str, s: Session, rt: Runtime, token: HostToken = None):
+    """starter (5 mixed), nightmare (5 very hard), nightmare-full (all 10)."""
+    room = await _host_room(s, code, token)
+    added = await service.add_pack(s, room, pack)
+    await rt.hub.broadcast_state(room.room_code)
+    return {"added": added}
 
 
 @router.post("/{code}/rounds/library", status_code=201)

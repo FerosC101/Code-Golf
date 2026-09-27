@@ -7,10 +7,19 @@ import { Input } from "../components/Field";
 import { api } from "../lib/api";
 import { session } from "../lib/session";
 
+type Pack = "starter" | "nightmare" | "nightmare-full" | "none";
+
+const PACKS: { id: Pack; label: string; hint: string }[] = [
+  { id: "starter", label: "Starter pack", hint: "5 classics, easy to hard. good for a first game." },
+  { id: "nightmare", label: "Nightmare pack", hint: "5 very hard, deliberately confusing problems. 8-10 min each." },
+  { id: "nightmare-full", label: "Full nightmare", hint: "all 10 nightmare problems. bring snacks." },
+  { id: "none", label: "Empty room", hint: "pick from the library or write your own." },
+];
+
 export default function HostCreate() {
   const navigate = useNavigate();
   const [name, setName] = useState("Game Night");
-  const [samples, setSamples] = useState(true);
+  const [pack, setPack] = useState<Pack>("starter");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +30,7 @@ export default function HostCreate() {
     try {
       const room = await api.createRoom(name.trim() || "Game Night");
       session.setHostToken(room.room_code, room.host_token);
-      if (samples) await api.addSamplePack(room.room_code, room.host_token);
+      if (pack !== "none") await api.addPack(room.room_code, room.host_token, pack);
       navigate(`/host/${room.room_code}`);
     } catch (err) {
       setError((err as Error).message);
@@ -45,18 +54,31 @@ export default function HostCreate() {
                 HOST A <span className="text-green">GAME</span>
               </h1>
               <Input label="Room name" name="room-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
-              <label className="flex cursor-pointer items-start gap-3 font-mono text-xs text-fog">
-                <input
-                  type="checkbox"
-                  checked={samples}
-                  onChange={(e) => setSamples(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-[var(--color-green)]"
-                />
-                <span>
-                  Load the starter pack
-                  <span className="block text-steel">5 classic problems with hidden tests. edit or delete any of them.</span>
-                </span>
-              </label>
+              <fieldset>
+                <legend className="label mb-2">Rounds</legend>
+                <div className="space-y-1.5">
+                  {PACKS.map((p) => (
+                    <label
+                      key={p.id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-sm border px-3 py-2 font-mono text-xs transition-colors ${
+                        pack === p.id ? "border-green bg-deep/40" : "border-slate hover:border-steel"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="pack"
+                        checked={pack === p.id}
+                        onChange={() => setPack(p.id)}
+                        className="mt-0.5 accent-[var(--color-green)]"
+                      />
+                      <span>
+                        <span className={p.id.startsWith("nightmare") ? "text-danger" : "text-cream"}>{p.label}</span>
+                        <span className="block text-steel">{p.hint}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
               {error && <p className="font-mono text-xs text-danger">&gt; {error.toLowerCase()}</p>}
               <Button type="submit" size="lg" className="w-full" busy={busy}>
                 Create room

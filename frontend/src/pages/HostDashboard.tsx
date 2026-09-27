@@ -228,10 +228,13 @@ export default function HostDashboard() {
                 room.status !== "finished" && (
                   <>
                     {host.rounds.length === 0 && (
-                      <Button size="sm" variant="secondary" busy={busy === "pack"} onClick={() => act("pack", () => api.addSamplePack(room.code, token))}>
+                      <Button size="sm" variant="secondary" busy={busy === "pack"} onClick={() => act("pack", () => api.addPack(room.code, token, "starter"))}>
                         Starter pack
                       </Button>
                     )}
+                    <Button size="sm" variant="danger" busy={busy === "nightmare"} onClick={() => act("nightmare", () => api.addPack(room.code, token, "nightmare"))}>
+                      + Nightmare
+                    </Button>
                     <Button size="sm" variant="secondary" onClick={() => setEditing({ mode: "library" })}>
                       Library
                     </Button>

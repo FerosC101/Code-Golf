@@ -1,4 +1,4 @@
-from app.game.problems import LIBRARY, STARTER_SLUGS
+from app.game.problems import LIBRARY, PACKS, STARTER_SLUGS
 from tests.test_game_flow import ctx, setup_room, snapshot  # noqa: F401  (fixture)
 
 
@@ -6,11 +6,13 @@ def test_library_is_well_formed():
     assert len(LIBRARY) >= 20
     for slug, p in LIBRARY.items():
         assert p["slug"] == slug
-        assert p["difficulty"] in ("easy", "medium", "hard")
+        assert p["difficulty"] in ("easy", "medium", "hard", "nightmare")
         assert any(not h for *_, h in p["tests"]), f"{slug} needs a public test"
         assert any(h for *_, h in p["tests"]), f"{slug} needs a hidden test"
         assert p["par"] < p["original_chars"], f"{slug} par should beat the original"
     assert all(s in LIBRARY for s in STARTER_SLUGS)
+    assert all(slug in LIBRARY for pack in PACKS.values() for slug in pack)
+    assert sum(p["difficulty"] == "nightmare" for p in LIBRARY.values()) >= 10
 
 
 async def test_practice_endpoints(ctx):  # noqa: F811
@@ -43,3 +45,13 @@ async def test_host_adds_library_rounds(ctx):  # noqa: F811
     assert [(x["number"], x["title"]) for x in rounds] == [(1, "Roman Numerals"), (2, "To Binary")]
     assert (await client.post(f"/api/rooms/{code}/rounds/library", json={"slugs": ["nope"]}, headers=host)).status_code == 404
     assert (await client.post(f"/api/rooms/{code}/rounds/library", json={"slugs": ["roman"]})).status_code == 403
+
+
+async def test_nightmare_pack_gets_a_longer_clock(ctx):  # noqa: F811
+    app, client = ctx
+    code, host, _ = await setup_room(client, players=())
+    r = await client.post(f"/api/rooms/{code}/rounds/pack/nightmare", headers=host)
+    assert r.status_code == 201 and r.json() == {"added": 5}
+    rounds = (await snapshot(app, code))["host"]["rounds"]
+    assert rounds[0]["title"] == "Look and Say" and rounds[0]["duration_seconds"] == 480
+    assert (await client.post(f"/api/rooms/{code}/rounds/pack/nope", headers=host)).status_code == 404

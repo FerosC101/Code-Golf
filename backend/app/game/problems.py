@@ -622,6 +622,385 @@ _RAW: list[dict] = [
             ("444", "CDXLIV", True),
         ],
     },
+    # ── nightmare: confusing specs, nasty edge cases, longer timer ─────────────
+    {
+        "slug": "look-and-say",
+        "title": "Look and Say",
+        "difficulty": "nightmare",
+        "description": (
+            "Read a string of digits. Describe it out loud, run by run: `1211` is one 1, one 2, two 1s, "
+            "so print `111221`. Each run becomes its length followed by the digit."
+        ),
+        "original_code": (
+            "digits = input()\n"
+            'described = ""\n'
+            "position = 0\n"
+            "while position < len(digits):\n"
+            "    current = digits[position]\n"
+            "    run_length = 1\n"
+            "    while position + run_length < len(digits) and digits[position + run_length] == current:\n"
+            "        run_length = run_length + 1\n"
+            "    described = described + str(run_length) + current\n"
+            "    position = position + run_length\n"
+            "print(described)\n"
+        ),
+        "par_solution": 'import itertools as t;print("".join(str(len([*g]))+k for k,g in t.groupby(input())))',
+        "tests": [
+            ("1", "11", False),
+            ("1211", "111221", False),
+            ("21", "1211", True),
+            ("111221", "312211", True),
+            ("3322251", "23321511", True),
+            ("9", "19", True),
+        ],
+    },
+    {
+        "slug": "spiral",
+        "title": "Spiral Matrix",
+        "difficulty": "nightmare",
+        "description": (
+            "Read `n`. Fill an n × n grid with 1 … n² walking clockwise from the top-left corner: right, down, "
+            "left, up, turning inward whenever you'd leave the grid or hit a filled cell. Print each row, numbers "
+            "separated by spaces."
+        ),
+        "original_code": (
+            "size = int(input())\n"
+            "grid = []\n"
+            "for row_index in range(size):\n"
+            "    grid.append([0] * size)\n"
+            "directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]\n"
+            "row = 0\n"
+            "column = 0\n"
+            "facing = 0\n"
+            "for value in range(1, size * size + 1):\n"
+            "    grid[row][column] = value\n"
+            "    next_row = row + directions[facing][0]\n"
+            "    next_column = column + directions[facing][1]\n"
+            "    outside = next_row < 0 or next_row >= size or next_column < 0 or next_column >= size\n"
+            "    if outside or grid[next_row][next_column] != 0:\n"
+            "        facing = (facing + 1) % 4\n"
+            "        next_row = row + directions[facing][0]\n"
+            "        next_column = column + directions[facing][1]\n"
+            "    row = next_row\n"
+            "    column = next_column\n"
+            "for line in grid:\n"
+            '    print(" ".join(str(number) for number in line))\n'
+        ),
+        "par_solution": (
+            "n=int(input());g={};p=0;d=1\n"
+            "for i in range(n*n):\n"
+            " g[p]=i+1;q=p+d\n"
+            " if not(0<=q.real<n>q.imag>=0)or q in g:d*=1j;q=p+d\n"
+            " p=q\n"
+            "for y in range(n):print(*[g[x+y*1j]for x in range(n)])"
+        ),
+        "duration_seconds": 600,
+        "tests": [
+            ("3", "1 2 3\n8 9 4\n7 6 5", False),
+            ("1", "1", False),
+            ("2", "1 2\n4 3", True),
+            ("4", "1 2 3 4\n12 13 14 5\n11 16 15 6\n10 9 8 7", True),
+            ("5", "1 2 3 4 5\n16 17 18 19 6\n15 24 25 20 7\n14 23 22 21 8\n13 12 11 10 9", True),
+        ],
+    },
+    {
+        "slug": "rpn",
+        "title": "Reverse Polish",
+        "difficulty": "nightmare",
+        "description": (
+            "Evaluate a postfix expression of integers and `+ - *`, tokens separated by spaces: `3 4 + 2 *` is 14. "
+            "An operator pops two values (the first popped is the right operand). Careful: `-3` is a number, "
+            "`-` alone is subtraction."
+        ),
+        "original_code": (
+            "tokens = input().split()\n"
+            "stack = []\n"
+            "for token in tokens:\n"
+            '    if token == "+" or token == "-" or token == "*":\n'
+            "        right = stack.pop()\n"
+            "        left = stack.pop()\n"
+            '        if token == "+":\n'
+            "            stack.append(left + right)\n"
+            '        elif token == "-":\n'
+            "            stack.append(left - right)\n"
+            "        else:\n"
+            "            stack.append(left * right)\n"
+            "    else:\n"
+            "        stack.append(int(token))\n"
+            "print(stack[0])\n"
+        ),
+        "par_solution": (
+            "s=[]\n"
+            'for t in input().split():s+=[eval(f"{s.pop(-2)}{t}{s.pop()}")if t in"+-*"else int(t)]\n'
+            "print(s[0])"
+        ),
+        "tests": [
+            ("3 4 + 2 *", "14", False),
+            ("5 1 2 + 4 * + 3 -", "14", False),
+            ("10 3 -", "7", True),
+            ("-3 4 *", "-12", True),
+            ("2 -3 -", "5", True),
+            ("7", "7", True),
+            ("1 2 3 4 5 * * * *", "120", True),
+        ],
+    },
+    {
+        "slug": "josephus",
+        "title": "Last One Standing",
+        "difficulty": "nightmare",
+        "description": (
+            "Read `n k`. People 1 … n stand in a circle. Starting from person 1, count k people (counting "
+            "yourself as 1) and remove the k-th; resume counting from the next person. Print who is left."
+        ),
+        "original_code": (
+            "count, step = map(int, input().split())\n"
+            "circle = list(range(1, count + 1))\n"
+            "index = 0\n"
+            "while len(circle) > 1:\n"
+            "    index = (index + step - 1) % len(circle)\n"
+            "    circle.pop(index)\n"
+            "print(circle[0])\n"
+        ),
+        "par_solution": "n,k=map(int,input().split());r=0\nfor i in range(n):r=(r+k)%-~i\nprint(r+1)",
+        "tests": [
+            ("7 3", "4", False),
+            ("5 2", "3", False),
+            ("1 5", "1", True),
+            ("10 1", "10", True),
+            ("6 5", "1", True),
+            ("41 3", "31", True),
+        ],
+    },
+    {
+        "slug": "largest-number",
+        "title": "Biggest Concatenation",
+        "difficulty": "nightmare",
+        "description": (
+            "Read space-separated non-negative integers. Arrange them to form the largest possible number when "
+            "glued together, and print it. `3 30 34 5 9` → `9534330`. No leading zeros: `0 0` is just `0`."
+        ),
+        "original_code": (
+            "from functools import cmp_to_key\n"
+            "\n"
+            "\n"
+            "def compare(first, second):\n"
+            "    if first + second > second + first:\n"
+            "        return -1\n"
+            "    if first + second < second + first:\n"
+            "        return 1\n"
+            "    return 0\n"
+            "\n"
+            "\n"
+            "numbers = input().split()\n"
+            "numbers.sort(key=cmp_to_key(compare))\n"
+            'result = "".join(numbers)\n'
+            'if result[0] == "0":\n'
+            '    result = "0"\n'
+            "print(result)\n"
+        ),
+        "par_solution": "print(int(''.join(sorted(input().split(),key=lambda x:x*9)[::-1])))",
+        "tests": [
+            ("3 30 34 5 9", "9534330", False),
+            ("10 2", "210", False),
+            ("0 0", "0", True),
+            ("121 12", "12121", True),
+            ("1", "1", True),
+            ("8 89 898", "898988", True),
+            ("432 43243", "43243432", True),
+        ],
+    },
+    {
+        "slug": "islands",
+        "title": "Count the Islands",
+        "difficulty": "nightmare",
+        "description": (
+            "Read a grid of `#` (land) and `.` (water), one row per line, until the input ends. Count the islands: "
+            "groups of land connected up, down, left or right. Diagonal neighbours do NOT connect."
+        ),
+        "original_code": (
+            "import sys\n"
+            "\n"
+            "grid = sys.stdin.read().split()\n"
+            "visited = set()\n"
+            "islands = 0\n"
+            "for start_row in range(len(grid)):\n"
+            "    for start_column in range(len(grid[start_row])):\n"
+            '        if grid[start_row][start_column] != "#" or (start_row, start_column) in visited:\n'
+            "            continue\n"
+            "        islands = islands + 1\n"
+            "        visited.add((start_row, start_column))\n"
+            "        to_explore = [(start_row, start_column)]\n"
+            "        while to_explore:\n"
+            "            row, column = to_explore.pop()\n"
+            "            for next_row, next_column in [(row + 1, column), (row - 1, column), (row, column + 1), (row, column - 1)]:\n"
+            "                if 0 <= next_row < len(grid) and 0 <= next_column < len(grid[next_row]):\n"
+            '                    if grid[next_row][next_column] == "#" and (next_row, next_column) not in visited:\n'
+            "                        visited.add((next_row, next_column))\n"
+            "                        to_explore.append((next_row, next_column))\n"
+            "print(islands)\n"
+        ),
+        "par_solution": (
+            "g=open(0).read().split();s={(r,c)for r,l in enumerate(g)for c,x in enumerate(l)if'#'==x};n=0\n"
+            "while s:\n"
+            " n+=1;t=[s.pop()]\n"
+            " while t:\n"
+            "  r,c=t.pop()\n"
+            "  for p in(r+1,c),(r-1,c),(r,c+1),(r,c-1):\n"
+            "   if p in s:s-={p};t+=[p]\n"
+            "print(n)"
+        ),
+        "duration_seconds": 600,
+        "tests": [
+            ("##.\n#..\n..#", "2", False),
+            ("...\n...", "0", False),
+            ("#.#.#", "3", True),
+            ("###\n#.#\n###", "1", True),
+            ("#.\n.#", "2", True),
+            ("##..#\n#..##\n..#..\n##.##", "5", True),
+        ],
+    },
+    {
+        "slug": "rotate-grid",
+        "title": "Quarter Turn",
+        "difficulty": "nightmare",
+        "description": (
+            "Read a rectangular grid of characters, one row per line, until the input ends. Rotate it 90° "
+            "clockwise and print it. `ab` over `cd` becomes `ca` over `db`."
+        ),
+        "original_code": (
+            "import sys\n"
+            "\n"
+            "rows = sys.stdin.read().split()\n"
+            "height = len(rows)\n"
+            "width = len(rows[0])\n"
+            "for column in range(width):\n"
+            '    new_row = ""\n'
+            "    for row in range(height - 1, -1, -1):\n"
+            "        new_row = new_row + rows[row][column]\n"
+            "    print(new_row)\n"
+        ),
+        "par_solution": "for r in zip(*open(0).read().split()[::-1]):print(*r,sep='')",
+        "tests": [
+            ("ab\ncd", "ca\ndb", False),
+            ("abc\ndef", "da\neb\nfc", False),
+            ("x", "x", True),
+            ("golf", "g\no\nl\nf", True),
+            ("a\nb\nc", "cba", True),
+        ],
+    },
+    {
+        "slug": "number-words",
+        "title": "Say the Number",
+        "difficulty": "nightmare",
+        "description": (
+            "Read an integer from 0 to 999 and print it in English, lowercase. Tens and ones are hyphenated "
+            "(`forty-two`), hundreds have no \"and\" (`one hundred five`), and round numbers stop early "
+            "(`three hundred twenty`, `one hundred`)."
+        ),
+        "original_code": (
+            'ones = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",\n'
+            '        "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",\n'
+            '        "seventeen", "eighteen", "nineteen"]\n'
+            'tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]\n'
+            "\n"
+            "\n"
+            "def below_hundred(number):\n"
+            "    if number < 20:\n"
+            "        return ones[number]\n"
+            "    word = tens[number // 10]\n"
+            "    if number % 10 != 0:\n"
+            '        word = word + "-" + ones[number % 10]\n'
+            "    return word\n"
+            "\n"
+            "\n"
+            "number = int(input())\n"
+            "hundreds = number // 100\n"
+            "rest = number % 100\n"
+            "if hundreds == 0:\n"
+            "    print(below_hundred(rest))\n"
+            "elif rest == 0:\n"
+            '    print(ones[hundreds] + " hundred")\n'
+            "else:\n"
+            '    print(ones[hundreds] + " hundred " + below_hundred(rest))\n'
+        ),
+        "par_solution": (
+            "w='zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen "
+            "sixteen seventeen eighteen nineteen'.split()\n"
+            "f=lambda n:w[n]if n<20 else'twenty thirty forty fifty sixty seventy eighty ninety'.split()[n//10-2]"
+            "+('-'+w[n%10])*(n%10>0)\n"
+            "h,r=divmod(int(input()),100)\n"
+            "print(h and w[h]+' hundred'+(' '+f(r))*(r>0)or f(r))"
+        ),
+        "duration_seconds": 600,
+        "tests": [
+            ("42", "forty-two", False),
+            ("0", "zero", False),
+            ("100", "one hundred", False),
+            ("13", "thirteen", True),
+            ("105", "one hundred five", True),
+            ("999", "nine hundred ninety-nine", True),
+            ("320", "three hundred twenty", True),
+            ("811", "eight hundred eleven", True),
+        ],
+    },
+    {
+        "slug": "clock-math",
+        "title": "Clock Arithmetic",
+        "difficulty": "nightmare",
+        "description": (
+            "The first line is a 24-hour time `HH:MM`, the second a number of minutes to add. It can be negative "
+            "or longer than a day. Print the resulting time as `HH:MM` with leading zeros."
+        ),
+        "original_code": (
+            "time_text = input()\n"
+            "minutes_to_add = int(input())\n"
+            'hours_text, minutes_text = time_text.split(":")\n'
+            "total = int(hours_text) * 60 + int(minutes_text) + minutes_to_add\n"
+            "total = total % (24 * 60)\n"
+            "hours = total // 60\n"
+            "minutes = total % 60\n"
+            'hours_out = str(hours) if hours >= 10 else "0" + str(hours)\n'
+            'minutes_out = str(minutes) if minutes >= 10 else "0" + str(minutes)\n'
+            'print(hours_out + ":" + minutes_out)\n'
+        ),
+        "par_solution": 'h,m=map(int,input().split(":"));t=(h*60+m+int(input()))%1440;print(f"{t//60:02}:{t%60:02}")',
+        "tests": [
+            ("23:45\n30", "00:15", False),
+            ("00:10\n-20", "23:50", False),
+            ("12:00\n1440", "12:00", True),
+            ("05:07\n-1500", "04:07", True),
+            ("09:05\n0", "09:05", True),
+            ("18:30\n3000", "20:30", True),
+        ],
+    },
+    {
+        "slug": "diamond",
+        "title": "Diamond",
+        "difficulty": "nightmare",
+        "description": (
+            "Read `n`. Print a diamond of `*` with 2n − 1 rows: the widest row has 2n − 1 stars. Leading spaces "
+            "matter, trailing spaces don't. `n = 2` prints ` *`, `***`, ` *`."
+        ),
+        "original_code": (
+            "size = int(input())\n"
+            "rows = []\n"
+            "for level in range(1, size + 1):\n"
+            '    padding = " " * (size - level)\n'
+            '    stars = "*" * (2 * level - 1)\n'
+            "    rows.append(padding + stars)\n"
+            "for row in rows:\n"
+            "    print(row)\n"
+            "for row in reversed(rows[:-1]):\n"
+            "    print(row)\n"
+        ),
+        "par_solution": "n=int(input())\nfor i in range(1-n,n):print(' '*abs(i)+'*'*(2*(n-abs(i))-1))",
+        "tests": [
+            ("2", " *\n***\n *", False),
+            ("1", "*", False),
+            ("3", "  *\n ***\n*****\n ***\n  *", True),
+            ("4", "   *\n  ***\n *****\n*******\n *****\n  ***\n   *", True),
+        ],
+    },
 ]
 
 
@@ -631,13 +1010,19 @@ def _build() -> dict[str, dict]:
         problem = dict(raw)
         problem["par"] = count_chars(problem["par_solution"])
         problem["original_chars"] = count_chars(problem["original_code"])
+        # Harder problems get more time on the clock by default.
+        problem.setdefault("duration_seconds", 480 if problem["difficulty"] == "nightmare" else 300)
         library[problem["slug"]] = problem
     return library
 
 
 LIBRARY: dict[str, dict] = _build()
-DIFFICULTIES = ("easy", "medium", "hard")
+DIFFICULTIES = ("easy", "medium", "hard", "nightmare")
 
-# One-click starter pack for new rooms: a spread of difficulties.
+# One-click packs for new rooms.
 STARTER_SLUGS = ["palindrome", "fizzbuzz", "digit-sum", "leap-year", "run-length"]
-SAMPLE_PACK: list[dict] = [LIBRARY[s] for s in STARTER_SLUGS]
+PACKS: dict[str, list[str]] = {
+    "starter": STARTER_SLUGS,
+    "nightmare": ["look-and-say", "rpn", "largest-number", "islands", "number-words"],
+    "nightmare-full": [slug for slug, p in LIBRARY.items() if p["difficulty"] == "nightmare"],
+}

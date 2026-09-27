@@ -9,11 +9,12 @@ import { session } from "../lib/session";
 import type { Difficulty } from "../lib/types";
 import { useLibrary } from "../lib/useLibrary";
 
-const FILTERS: ("all" | Difficulty)[] = ["all", "easy", "medium", "hard"];
+const FILTERS: ("all" | Difficulty)[] = ["all", "easy", "medium", "hard", "nightmare"];
 export const DIFFICULTY_TONE: Record<Difficulty, string> = {
   easy: "text-green border-green/40",
   medium: "text-amber border-amber/40",
   hard: "text-danger border-danger/40",
+  nightmare: "bg-danger text-ink border-danger font-bold",
 };
 
 export default function PracticeList() {

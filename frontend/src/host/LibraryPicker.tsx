@@ -36,7 +36,7 @@ export function LibraryPicker({ queued, onAdd, onClose }: Props) {
     <div className="p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[11px] text-fog">
         <span>quick pick:</span>
-        {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
+        {(["easy", "medium", "hard", "nightmare"] as Difficulty[]).map((d) => (
           <button key={d} type="button" onClick={() => pickLevel(d)} className={`rounded-sm border px-2 py-0.5 uppercase ${DIFFICULTY_TONE[d]}`}>
             + all {d}
           </button>

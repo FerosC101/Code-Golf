@@ -57,8 +57,8 @@ export const api = {
     request<{ id: number }>(`/api/rooms/${code}/rounds`, { method: "POST", host, body: json(data) }),
   addLibraryRounds: (code: string, host: string, slugs: string[]) =>
     request<{ added: number }>(`/api/rooms/${code}/rounds/library`, { method: "POST", host, body: json({ slugs }) }),
-  addSamplePack: (code: string, host: string) =>
-    request(`/api/rooms/${code}/rounds/sample-pack`, { method: "POST", host }),
+  addPack: (code: string, host: string, pack: "starter" | "nightmare" | "nightmare-full") =>
+    request<{ added: number }>(`/api/rooms/${code}/rounds/pack/${pack}`, { method: "POST", host }),
   updateRound: (code: string, host: string, id: number, data: RoundPayload) =>
     request(`/api/rooms/${code}/rounds/${id}`, { method: "PUT", host, body: json(data) }),
   deleteRound: (code: string, host: string, id: number) =>

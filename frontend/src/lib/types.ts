@@ -106,7 +106,7 @@ export type JudgeResult = {
   par_solution?: string;
 };
 
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = "easy" | "medium" | "hard" | "nightmare";
 
 export type LibraryProblem = {
   slug: string;

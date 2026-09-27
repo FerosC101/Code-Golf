@@ -86,9 +86,11 @@ cd frontend && npm run typecheck
 
 ### Problem library & practice
 
-24 built-in problems (11 easy, 8 medium, 5 hard) live in `backend/app/game/problems.py`, each with a verbose original, public + hidden tests, and a **par**: the length of a reference golfed solution.
+34 built-in problems (11 easy, 8 medium, 5 hard, 10 **nightmare**) live in `backend/app/game/problems.py`, each with a verbose original, public + hidden tests, and a **par**: the length of a reference golfed solution.
 
-- **Hosts** add them as rounds from the dashboard's **Library** picker (pick any, or "+ all hard"), write custom rounds, or load the 5-problem starter pack.
+Nightmare problems are built for matches: confusing specs and nasty edge cases (`-3` is a number but `-` is subtraction, diagonal land doesn't connect, leading spaces count but trailing ones don't, `0 0` concatenates to `0`). They default to 8-10 minute rounds instead of 5.
+
+- **Hosts** pick a pack when creating a room (**Starter**: 5 mixed, **Nightmare**: 5 very hard, **Full nightmare**: all 10, or empty), add problems from the dashboard's **Library** picker (any problem, or "+ all nightmare"), hit **+ Nightmare** to append the nightmare pack, or write custom rounds.
 - **Practice range** (`/practice`): solo, no room, no clock. Pick a hole, shrink it, submit against the same hidden tests, and get scored against par (`-3 UNDER PAR`, `PAR`, `+5 OVER PAR`). Beating a hole reveals the par solution. Personal bests are stored in the browser. Practice judging is capped (`CG_PRACTICE_CONCURRENCY`, default 2) so it can't slow down a live round.
 
 Adding a problem: append to `_RAW` in `problems.py`. `tests/test_practice.py` checks the shape; run the original and par solution through the executor to check the tests themselves.
@@ -122,7 +124,7 @@ backend/   FastAPI + SQLAlchemy 2 (async) + PostgreSQL
   app/realtime/         WebSocket endpoint + in-process fan-out hub
   app/api/rooms.py      REST endpoints for rooms
   app/api/practice.py   problem library + solo practice
-  app/game/problems.py  the 24-problem library
+  app/game/problems.py  the 34-problem library and packs
 
 executor/  Isolated execution service (internal network only)
   app/sandbox.py        docker mode (one container per job) / process mode (dev)
