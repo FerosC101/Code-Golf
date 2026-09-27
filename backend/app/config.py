@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="CG_", env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+asyncpg://codegolf:codegolf@localhost:5432/codegolf"
+    # How long startup keeps retrying an unreachable database before giving up.
+    db_connect_wait_seconds: float = 120.0
     executor_url: str = "http://localhost:8001"
     executor_token: str = "dev-executor-token"
     # Comma-separated ("https://a.app,https://b.app") or a JSON list.

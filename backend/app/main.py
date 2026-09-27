@@ -23,7 +23,7 @@ def create_app(settings: Settings | None = None, executor: Executor | None = Non
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         db.init_engine(settings.database_url)
-        await db.create_tables()
+        await db.create_tables(settings.db_connect_wait_seconds)
         ex = executor or HttpExecutor(settings.executor_url, settings.executor_token, settings.test_time_limit)
         app.state.runtime = GameRuntime(settings, ex, Hub())
         await app.state.runtime.resume()
