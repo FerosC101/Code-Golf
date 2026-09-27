@@ -4,6 +4,11 @@ import { Prompt } from "../brand/Prompt";
 import { Sticker } from "../brand/Sticker";
 import { Wordmark } from "../brand/Wordmark";
 import { Icon, type IconName } from "../brand/icons";
+import { pad2 } from "../lib/format";
+import { session } from "../lib/session";
+import type { Difficulty } from "../lib/types";
+import { useLibrary } from "../lib/useLibrary";
+import { DIFFICULTY_TONE } from "./PracticeList";
 
 const FEATURES: { icon: IconName; label: [string, string]; tint: string }[] = [
   { icon: "python", label: ["PYTHON", "ONLY"], tint: "" },
@@ -35,27 +40,27 @@ export default function Landing() {
             <br />
             MAKE IT WORK.
           </p>
-          <div className="mt-9 flex flex-wrap gap-4">
+          <div className="mt-9 flex flex-wrap gap-3">
             <Link
               to="/join"
-              className="inline-flex h-13 items-center rounded-sm border border-green bg-green px-7 font-mono text-sm font-bold tracking-[0.2em] text-ink shadow-[4px_4px_0_0_var(--color-deep)] transition-transform hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+              className="inline-flex h-12 items-center rounded-sm border border-green bg-green px-4 font-mono text-[13px] font-bold tracking-[0.1em] text-ink shadow-[4px_4px_0_0_var(--color-deep)] transition-transform hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
             >
               [ JOIN GAME ]
             </Link>
             <Link
               to="/host"
-              className="inline-flex h-13 items-center rounded-sm border border-slate px-7 font-mono text-sm font-bold tracking-[0.2em] text-cream transition-colors hover:border-green hover:text-green"
+              className="inline-flex h-12 items-center rounded-sm border border-slate px-4 font-mono text-[13px] font-bold tracking-[0.1em] text-cream transition-colors hover:border-green hover:text-green"
             >
               [ HOST A GAME ]
             </Link>
-          </div>
-          <p className="mt-5 font-mono text-xs text-fog">
-            no game tonight?{" "}
-            <Link to="/practice" className="text-green underline-offset-4 hover:underline">
-              warm up on the practice range →
+            <Link
+              to="/practice"
+              className="inline-flex h-12 items-center rounded-sm border border-slate px-4 font-mono text-[13px] font-bold tracking-[0.1em] text-cream transition-colors hover:border-green hover:text-green"
+            >
+              [ PRACTICE ]
             </Link>
-          </p>
-          <p className="mt-6 font-mono text-xs tracking-[0.2em] text-green/80">
+          </div>
+          <p className="mt-8 font-mono text-xs tracking-[0.2em] text-green/80">
             [ PYTHON <span className="text-steel">|</span> LESS CHARACTERS <span className="text-steel">|</span> MORE CHAOS ]
           </p>
         </section>
@@ -103,6 +108,8 @@ export default function Landing() {
         </div>
       </section>
 
+      <Course />
+
       <section className="border-t border-line">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 md:grid-cols-[1.2fr_1fr] md:px-8">
           <div className="rounded-md border border-slate bg-ink-2">
@@ -134,5 +141,88 @@ export default function Landing() {
         &gt;_ code golf · built for game nights · no accounts, no tracking, no mercy
       </footer>
     </div>
+  );
+}
+
+const LEVELS: { level: Difficulty; blurb: string }[] = [
+  { level: "easy", blurb: "one-liners waiting to happen" },
+  { level: "medium", blurb: "loops worth unrolling" },
+  { level: "hard", blurb: "full python crimes" },
+];
+
+/** Every problem in the library, grouped by difficulty; each links into practice. */
+function Course() {
+  const { problems, error } = useLibrary();
+  if (error) return null; // the landing page shouldn't break if the API is down
+  const numbered = (problems ?? []).map((p, i) => ({ ...p, hole: i + 1 }));
+
+  return (
+    <section className="border-t border-line" aria-labelledby="course-heading">
+      <div className="mx-auto max-w-6xl px-5 py-12 md:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <div className="label">The course</div>
+            <h2 id="course-heading" className="mt-2 font-display text-3xl text-cream sm:text-4xl">
+              {problems ? problems.length : "··"} HOLES. <span className="text-green">PICK YOUR POISON.</span>
+            </h2>
+            <p className="mt-2 max-w-xl font-mono text-sm leading-6 text-fog">
+              Hosts queue them up as rounds. Or play them solo on the practice range: no clock, just you versus par.
+            </p>
+          </div>
+          <Link
+            to="/practice"
+            className="inline-flex h-11 items-center rounded-sm border border-green px-5 font-mono text-xs font-bold tracking-[0.2em] text-green transition-colors hover:bg-green hover:text-ink"
+          >
+            [ OPEN PRACTICE RANGE ]
+          </Link>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {LEVELS.map(({ level, blurb }) => {
+            const holes = numbered.filter((p) => p.difficulty === level);
+            return (
+              <div key={level} className="rounded-md border border-slate bg-ink-2">
+                <div className="flex items-center justify-between border-b border-slate px-4 py-3">
+                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[10px] tracking-[0.2em] uppercase ${DIFFICULTY_TONE[level]}`}>
+                    {level}
+                  </span>
+                  <span className="font-mono text-[11px] text-fog">
+                    {problems ? `${holes.length} holes · ` : ""}
+                    {blurb}
+                  </span>
+                </div>
+                <ul className="divide-y divide-line">
+                  {!problems &&
+                    Array.from({ length: 4 }, (_, i) => (
+                      <li key={i} className="px-4 py-2.5 font-mono text-xs text-steel">
+                        &gt; loading<span className="animate-blink">_</span>
+                      </li>
+                    ))}
+                  {holes.map((p) => {
+                    const best = session.practiceBest(p.slug);
+                    return (
+                      <li key={p.slug}>
+                        <Link to={`/practice/${p.slug}`} className="group flex items-center gap-3 px-4 py-2.5 font-mono text-[13px] hover:bg-ink-3">
+                          <span className="w-5 text-steel">{pad2(p.hole)}</span>
+                          <span className="flex-1 truncate text-cream group-hover:text-green">{p.title}</span>
+                          {best != null && (
+                            <span className={best < p.par ? "text-green" : "text-fog"} title="your best">
+                              {best}
+                            </span>
+                          )}
+                          <span className="text-[11px] text-fog">
+                            par <b className="text-cream">{p.par}</b>
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
