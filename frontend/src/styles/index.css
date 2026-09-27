@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   Every colour, font, radius and motion curve in the app comes from here.  */
+@theme {
+  --color-ink: #071113;        /* page background */
+  --color-ink-2: #0b181b;      /* panels */
+  --color-ink-3: #10211f;      /* raised / hover */
+  --color-line: #1a2a2f;       /* grid + dividers */
+  --color-slate: #26343b;      /* borders */
+  --color-steel: #41545f;      /* muted borders, disabled */
+  --color-fog: #8b9ca4;        /* secondary text */
+  --color-cream: #f2ebdd;      /* primary text, CODE */
+  --color-green: #5cff72;      /* the accent. use sparingly */
+  --color-green-2: #36d152;    /* pressed / secondary green */
+  --color-deep: #063d2c;       /* green-tinted surfaces */
+  --color-amber: #ffc24b;      /* 30s warning */
+  --color-danger: #e0594b;     /* failures, final seconds */
+  --color-python-blue: #3b7bb5;
+  --color-python-yellow: #ffd43b;
+
+  --font-display: "Silkscreen", "JetBrains Mono", monospace;
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1.2);
+
+  --animate-blink: blink 1.05s steps(1) infinite;
+  --animate-pop: pop 380ms var(--ease-snap);
+  --animate-rise: rise 420ms var(--ease-snap) both;
+  --animate-urgent: urgent 1s ease-in-out infinite;
+  --animate-count-in: count-in 900ms var(--ease-snap) both;
+  --animate-float: float 3.2s ease-in-out infinite;
+  --animate-bounce-ball: bounce-ball 1.1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  --animate-flag: flag 1.6s steps(2) infinite;
+  --animate-fade-up: fade-up 1.4s ease-out forwards;
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
+  }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.14); color: var(--color-green); }
+    100% { transform: scale(1); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes urgent {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.045); }
+  }
+  @keyframes count-in {
+    0% { opacity: 0; transform: scale(2.4); filter: blur(4px); }
+    30% { opacity: 1; transform: scale(0.94); filter: none; }
+    45% { transform: scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: scale(0.9); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes bounce-ball {
+    0%, 100% { transform: translateY(0) scale(1.08, 0.92); }
+    12% { transform: translateY(-4px) scale(1); }
+    50% { transform: translateY(-38px); }
+    88% { transform: translateY(-4px) scale(1); }
+  }
+  @keyframes flag {
+    0% { transform: skewY(0deg); }
+    50% { transform: skewY(-4deg); }
+  }
+  @keyframes fade-up {
+    0% { opacity: 0; transform: translateY(4px); }
+    15%, 70% { opacity: 1; transform: none; }
+    100% { opacity: 0; transform: translateY(-14px); }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background: var(--color-ink);
+    color: var(--color-cream);
+    font-family: var(--font-sans);
+    min-height: 100dvh;
+    /* Every character counts: never let "==" or "->" render as one glyph. */
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0, "calt" 0;
+  }
+  ::selection {
+    background: var(--color-green);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-green);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-color: var(--color-slate) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+@layer components {
+  /* Faint terminal grid behind full-bleed screens. */
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgb(92 255 114 / 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(92 255 114 / 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  /* Monospace section label: "LOGO VARIATIONS", "CONNECTED PLAYERS" */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-fog);
+  }
+  .pixelated {
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

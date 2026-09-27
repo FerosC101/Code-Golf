@@ -1,0 +1,79 @@
+# docker compose up --build   →   http://localhost:8080
+#
+# Network layout:
+#   public    web (nginx) ↔ backend
+#   internal  backend ↔ db, backend ↔ executor   (no route to the internet)
+#   none      every submission container
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: codegolf
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codegolf}
+      POSTGRES_DB: codegolf
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codegolf"]
+      interval: 3s
+      retries: 20
+    networks: [internal]
+    restart: unless-stopped
+
+  # Builds the throwaway image each submission runs in, then exits.
+  sandbox-image:
+    build: ./executor/sandbox
+    image: codegolf-sandbox:latest
+    entrypoint: ["true"]
+    network_mode: none
+    restart: "no"
+
+  executor:
+    build: ./executor
+    user: root  # to talk to the Docker socket
+    environment:
+      EXEC_MODE: docker
+      EXEC_TOKEN: ${EXECUTOR_TOKEN:-change-me-executor-token}
+      EXEC_SANDBOX_IMAGE: codegolf-sandbox:latest
+      EXEC_MAX_CONCURRENCY: ${EXECUTOR_CONCURRENCY:-4}
+    volumes:
+      # Needed to start sibling sandbox containers. The executor is only
+      # reachable from the internal network; never expose it publicly.
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      sandbox-image:
+        condition: service_completed_successfully
+    networks: [internal]
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      CG_DATABASE_URL: postgresql+asyncpg://codegolf:${POSTGRES_PASSWORD:-codegolf}@db:5432/codegolf
+      CG_EXECUTOR_URL: http://executor:8001
+      CG_EXECUTOR_TOKEN: ${EXECUTOR_TOKEN:-change-me-executor-token}
+      CG_CORS_ORIGINS: '["${PUBLIC_ORIGIN:-http://localhost:8080}"]'
+      CG_CORS_ORIGIN_REGEX: ${CORS_ORIGIN_REGEX:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      executor:
+        condition: service_started
+    networks: [internal, public]
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports:
+      - "${PORT:-8080}:80"
+    depends_on: [backend]
+    networks: [public]
+    restart: unless-stopped
+
+networks:
+  public: {}
+  internal:
+    internal: true
+
+volumes:
+  pgdata: {}
