@@ -38,6 +38,8 @@ export type ResultEntry = {
   points: number;
   chars: number | null;
   status: "valid" | "failed" | "none";
+  /** ms into the round when this length was first submitted: the tiebreaker. */
+  time_ms: number | null;
 };
 
 export type RoundResults = {
@@ -84,7 +86,7 @@ export type RoomState = {
   results: RoundResults | null;
   leaderboard: LeaderboardEntry[];
   me?: { player_id: number; name: string; points: number; best_chars: number | null; attempts: number } | null;
-  host?: { rounds: HostRound[]; submissions: HostSubmission[]; best: Record<string, number> };
+  host?: { rounds: HostRound[]; submissions: HostSubmission[]; best: Record<string, { chars: number; at: number | null }> };
 };
 
 export type RoomEvent = { type: "event"; kind: string; text: string; at: number; player?: string; passed?: boolean };

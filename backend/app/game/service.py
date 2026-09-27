@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.game.problems import LIBRARY, PACKS
-from app.game.scoring import DEFAULT_SCORING, competition_rank, points_for_rank
+from app.game.scoring import DEFAULT_SCORING, points_for_rank, round_ranking
 from app.models import GameRoom, Player, Round, RoundScore, Submission, TestCase, as_utc
 from app.schemas import RoundIn, TestCaseIn
 
@@ -246,7 +246,10 @@ async def close_round(s: AsyncSession, room: GameRoom, r: Round, now: datetime) 
         return False
     best = await best_passing(s, r.id)
     players = {p.id: p for p in room.players}
-    ranked = competition_rank((pid, sub.character_count) for pid, sub in best.items() if pid in players)
+    # Same length? The earlier submission wins the tie.
+    ranked = round_ranking(
+        (pid, sub.character_count, (as_utc(sub.submitted_at), sub.id)) for pid, sub in best.items() if pid in players
+    )
     for pid, chars, rank in ranked:
         points = points_for_rank(rank, room.scoring)
         players[pid].total_points += points

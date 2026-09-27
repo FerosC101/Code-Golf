@@ -1,7 +1,7 @@
 """Pure scoring rules. No I/O here so they're trivial to test."""
 
 from collections.abc import Hashable, Iterable, Sequence
-from typing import TypeVar
+from typing import Any, TypeVar
 
 DEFAULT_SCORING: list[int] = [10, 8, 6, 5, 4, 3, 2, 1]
 
@@ -35,6 +35,17 @@ def competition_rank(items: Iterable[tuple[K, int]], *, reverse: bool = False) -
         ranked.append((key, value, rank))
         prev_value, prev_rank = value, rank
     return ranked
+
+
+def round_ranking(entries: Iterable[tuple[K, int, Any]]) -> list[tuple[K, int, int]]:
+    """Rank a round: fewest characters first; equal length → whoever got there first.
+
+    `entries` are (key, chars, tiebreak) where tiebreak sorts earlier-is-better,
+    e.g. (submitted_at, submission_id). Every player gets a distinct rank.
+    Returns (key, chars, rank).
+    """
+    ordered = sorted(entries, key=lambda e: (e[1], e[2]))
+    return [(key, chars, rank) for rank, (key, chars, _) in enumerate(ordered, start=1)]
 
 
 def points_for_rank(rank: int, scoring: Sequence[int]) -> int:

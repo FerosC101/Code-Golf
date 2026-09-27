@@ -416,14 +416,11 @@ function RoundRanking({ state }: { state: RoomState }) {
   const host = state.host!;
   const liveRows = useMemo(() => {
     const names = new Map(state.players.map((p) => [p.id, p.name]));
-    const rows = Object.entries(host.best)
-      .map(([id, chars]) => ({ id: Number(id), name: names.get(Number(id)) ?? "?", chars }))
-      .sort((a, b) => a.chars - b.chars);
-    let rank = 0;
-    return rows.map((r, i) => {
-      if (i === 0 || r.chars !== rows[i - 1].chars) rank = i + 1;
-      return { ...r, rank };
-    });
+    // Same rule as final scoring: fewest chars, then whoever got there first.
+    return Object.entries(host.best)
+      .map(([id, b]) => ({ id: Number(id), name: names.get(Number(id)) ?? "?", chars: b.chars, at: b.at ?? 0 }))
+      .sort((a, b) => a.chars - b.chars || a.at - b.at)
+      .map((r, i) => ({ ...r, rank: i + 1 }));
   }, [host.best, state.players]);
 
   if (state.room.status === "active") {

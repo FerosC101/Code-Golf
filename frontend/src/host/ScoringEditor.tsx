@@ -54,7 +54,7 @@ export function ScoringEditor({ scoring, onSave }: { scoring: number[]; onSave: 
           Default
         </Button>
       </div>
-      <p className="font-mono text-[10px] leading-4 text-steel">ties share a rank. last value applies to every rank below. changes apply to rounds not yet scored.</p>
+      <p className="font-mono text-[10px] leading-4 text-steel">same length? first to submit it ranks higher. last value applies to every rank below. changes apply to rounds not yet scored.</p>
     </div>
   );
 }

@@ -99,7 +99,7 @@ Adding a problem: append to `_RAW` in `problems.py`. `tests/test_practice.py` ch
 
 - **Every character counts**: spaces, tabs and newlines included. CRLF is normalised to LF. Counted in Unicode code points, identical on client and server.
 - **Output matching** ignores trailing whitespace on each line and trailing blank lines. Test inputs are fed as lines (a trailing newline is added if missing).
-- **Ties share a rank** (standard competition ranking): 27, 27, 29 → 1st, 1st, 3rd. Submission speed is never a tiebreaker.
+- **Ties go to whoever got there first.** Rounds rank by fewest characters, then by when the player *first* submitted that length: 27 at 1:10, 27 at 2:05, 29 → 1st, 2nd, 3rd. Every player gets a distinct rank and points. (The overall leaderboard lets equal point totals share a place.)
 - **Points** default to `10, 8, 6, 5, 4, 3, 2, 1`; the last value applies to every rank below it. Hosts can change it per room. Players with no passing submission get 0.
 - **Movement** arrows on the leaderboard compare against standings before the latest round.
 

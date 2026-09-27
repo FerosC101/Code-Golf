@@ -78,10 +78,12 @@ async def build_snapshot(s: AsyncSession, room: GameRoom, connected: set[int]) -
         )
     attempts: dict[int, int] = {}
     best: dict[int, int] = {}
-    for sub in subs:
+    best_at: dict[int, int | None] = {}  # when each player first reached their best length
+    for sub in subs:  # chronological
         attempts[sub.player_id] = attempts.get(sub.player_id, 0) + 1
-        if sub.passed:
-            best[sub.player_id] = min(best.get(sub.player_id, sub.character_count), sub.character_count)
+        if sub.passed and sub.character_count < best.get(sub.player_id, sub.character_count + 1):
+            best[sub.player_id] = sub.character_count
+            best_at[sub.player_id] = ms(sub.submitted_at)
 
     # ── leaderboard with movement relative to the previous closed round ──
     closed = [r for r in room.rounds if r.status == "closed"]
@@ -120,6 +122,10 @@ async def build_snapshot(s: AsyncSession, room: GameRoom, connected: set[int]) -
             if sc.player_id not in names:
                 continue
             status = "valid" if sc.rank else ("failed" if attempts.get(sc.player_id) else "none")
+            win = winners.get(sc.player_id)
+            time_ms = None
+            if win is not None and cur.starts_at is not None:
+                time_ms = max(0, ms(win.submitted_at) - ms(cur.starts_at))
             entries.append(
                 {
                     "player_id": sc.player_id,
@@ -128,6 +134,8 @@ async def build_snapshot(s: AsyncSession, room: GameRoom, connected: set[int]) -
                     "points": sc.points,
                     "chars": sc.best_character_count,
                     "status": status,
+                    # Time into the round when this length was first submitted (the tiebreaker).
+                    "time_ms": time_ms,
                 }
             )
         entries.sort(key=lambda e: (e["rank"] is None, e["rank"] or 0, e["status"] != "failed", e["name"].lower()))
@@ -183,7 +191,7 @@ async def build_snapshot(s: AsyncSession, room: GameRoom, connected: set[int]) -
             }
             for sub in reversed(subs)
         ],
-        "best": {str(pid): chars for pid, chars in best.items()},
+        "best": {str(pid): {"chars": chars, "at": best_at[pid]} for pid, chars in best.items()},
     }
     me = {
         p.id: {

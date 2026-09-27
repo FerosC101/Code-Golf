@@ -91,7 +91,7 @@ async def test_full_game(ctx):
     better = await submit("Vince", "x" * 24)
     assert (better["previous_best"], better["best"]) == (31, 24)
     await submit("Ian", "x" * 27)
-    await submit("Aila", "x" * 27)  # tie with Ian
+    await submit("Aila", "x" * 27)  # same length as Ian, but later
     bad = await submit("Marco", "BAD")
     assert not bad["passed"] and bad["hidden_total"] == 1 and bad["hidden_passed"] == 0
 
@@ -102,8 +102,11 @@ async def test_full_game(ctx):
     snap = await snapshot(app, code)
     entries = {e["name"]: e for e in snap["results"]["entries"]}
     assert (entries["Vince"]["rank"], entries["Vince"]["points"], entries["Vince"]["chars"]) == (1, 10, 24)
+    # Tie on length → Ian submitted first, so Ian places above Aila.
     assert (entries["Ian"]["rank"], entries["Ian"]["points"]) == (2, 8)
-    assert (entries["Aila"]["rank"], entries["Aila"]["points"]) == (2, 8)
+    assert (entries["Aila"]["rank"], entries["Aila"]["points"]) == (3, 6)
+    assert entries["Ian"]["time_ms"] <= entries["Aila"]["time_ms"]
+    assert [e["name"] for e in snap["results"]["entries"][:3]] == ["Vince", "Ian", "Aila"]
     assert (entries["Marco"]["rank"], entries["Marco"]["points"], entries["Marco"]["status"]) == (None, 0, "failed")
     assert snap["results"]["shortest"] == {"name": "Vince", "code": "x" * 24, "chars": 24}
     assert snap["room"]["status"] == "results"
@@ -117,7 +120,8 @@ async def test_full_game(ctx):
     board = {e["name"]: e for e in snap["leaderboard"]}
     assert board["Vince"]["points"] == 18 and board["Vince"]["rank"] == 1 and board["Vince"]["movement"] == 0
     assert board["Marco"]["points"] == 10 and board["Marco"]["movement"] == 2  # 4th -> 2nd
-    assert board["Ian"]["movement"] == -1 and board["Ian"]["rank"] == 3 == board["Aila"]["rank"]  # 2nd -> 3rd (tied)
+    assert board["Ian"]["movement"] == -1 and board["Ian"]["rank"] == 3  # 2nd -> 3rd
+    assert board["Aila"]["movement"] == -1 and board["Aila"]["rank"] == 4  # 3rd -> 4th
 
     no_more = await client.post(f"/api/rooms/{code}/start", headers=host)
     assert no_more.status_code == 409

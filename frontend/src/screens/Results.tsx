@@ -1,6 +1,6 @@
 import { Sticker } from "../brand/Sticker";
 import { Icon } from "../brand/icons";
-import { MEDALS, pad2 } from "../lib/format";
+import { MEDALS, clock, pad2 } from "../lib/format";
 import type { RoomState } from "../lib/types";
 import { Leaderboard } from "./Leaderboard";
 
@@ -51,8 +51,13 @@ export function Results({ state, meId, footer }: { state: RoomState; meId?: numb
                     {MEDALS[e.rank!] ?? <span className="text-steel">{e.rank}</span>}
                   </span>
                   <span className="truncate font-display text-lg text-cream sm:text-xl">{e.name}</span>
-                  <span className="font-mono text-sm text-fog tabular-nums">
+                  <span className="text-right font-mono text-sm text-fog tabular-nums">
                     <b className="text-cream">{e.chars}</b> CHARS
+                    {e.time_ms != null && (
+                      <span className="block text-[11px] text-steel" title="when this length was first submitted">
+                        at {clock(e.time_ms)}
+                      </span>
+                    )}
                   </span>
                   <span className="text-right font-display text-xl text-green">+{e.points}</span>
                 </li>
